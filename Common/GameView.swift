@@ -248,7 +248,7 @@ class GameView: SCNView {
         
         // Title
         let title = SKLabelNode(fontNamed: "Chalkduster")
-        title.text = "Fox"
+        title.text = "Fineas"
         title.fontSize = 60
         title.fontColor = .white
         title.position = CGPoint(x: 0, y: h * 0.3)

@@ -305,7 +305,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 94CA651F1ADBF90F006293CF /* Build configuration list for PBXProject "Fox" */;
+			buildConfigurationList = 94CA651F1ADBF90F006293CF /* Build configuration list for PBXProject "Fineas" */;
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -451,7 +451,7 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		94CA65461ADBF90F006293CF /* Debug configuration for PBXProject "Fox" */ = {
+		94CA65461ADBF90F006293CF /* Debug configuration for PBXProject "Fineas" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -492,7 +492,7 @@
 			};
 			name = Debug;
 		};
-		94CA65471ADBF90F006293CF /* Release configuration for PBXProject "Fox" */ = {
+		94CA65471ADBF90F006293CF /* Release configuration for PBXProject "Fineas" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -536,7 +536,7 @@
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.fox.swift";
-				PRODUCT_MODULE_NAME = AAPLFoxSwift;
+				PRODUCT_MODULE_NAME = AAPLFineasSwift;
 				PRODUCT_NAME = "Fox (Swift)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 3.0;
@@ -554,7 +554,7 @@
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.fox.swift";
-				PRODUCT_MODULE_NAME = AAPLFoxSwift;
+				PRODUCT_MODULE_NAME = AAPLFineasSwift;
 				PRODUCT_NAME = "Fox (Swift)";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -575,7 +575,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.fox.swift";
-				PRODUCT_MODULE_NAME = AAPLFoxSwift;
+				PRODUCT_MODULE_NAME = AAPLFineasSwift;
 				PRODUCT_NAME = "Fox (Swift)";
 				SDKROOT = appletvos;
 				SWIFT_VERSION = 3.0;
@@ -596,7 +596,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.fox.swift";
-				PRODUCT_MODULE_NAME = AAPLFoxSwift;
+				PRODUCT_MODULE_NAME = AAPLFineasSwift;
 				PRODUCT_NAME = "Fox (Swift)";
 				SDKROOT = appletvos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -620,7 +620,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.example1.apple-samplecode.fox.swift";
-				PRODUCT_MODULE_NAME = AAPLFoxSwift;
+				PRODUCT_MODULE_NAME = AAPLFineasSwift;
 				PRODUCT_NAME = Fo;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 4.0;
@@ -641,7 +641,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.example1.apple-samplecode.fox.swift";
-				PRODUCT_MODULE_NAME = AAPLFoxSwift;
+				PRODUCT_MODULE_NAME = AAPLFineasSwift;
 				PRODUCT_NAME = Fo;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -654,11 +654,11 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		94CA651F1ADBF90F006293CF /* Build configuration list for PBXProject "Fox" */ = {
+		94CA651F1ADBF90F006293CF /* Build configuration list for PBXProject "Fineas" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				94CA65461ADBF90F006293CF /* Debug configuration for PBXProject "Fox" */,
-				94CA65471ADBF90F006293CF /* Release configuration for PBXProject "Fox" */,
+				94CA65461ADBF90F006293CF /* Debug configuration for PBXProject "Fineas" */,
+				94CA65471ADBF90F006293CF /* Release configuration for PBXProject "Fineas" */,
 			);
 			defaultConfigurationName = Release;
 		};
