@@ -36,6 +36,10 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
     // Nodes to manipulate the camera
     private let cameraYHandle = SCNNode()
     private let cameraXHandle = SCNNode()
+    private let defaultCameraDistance: SCNFloat = 10.0
+    private let zoomedOutCameraDistance: SCNFloat = 14.0
+    private let zoomOutThreshold: Float = 8.0   // start zooming out when character is this close
+    private let zoomInThreshold: Float = 12.0   // fully zoomed in when character is this far
     
     // The character
     private let character = Character()
@@ -72,7 +76,7 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
     private var isRecording = false
     private var isReplaying = false
     private var replayIndex = 0
-    private var lastVectorDisplayTime: TimeInterval = 0
+
     internal var isShowingStartScreen = true
     
     // Game states
@@ -142,6 +146,22 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
         gameView.isPlaying = false
     }
     
+    internal func showExitConfirm() {
+        gameView.showExitConfirmDialog()
+        gameView.isPlaying = false
+    }
+    
+    internal func hideExitConfirm() {
+        gameView.hideExitConfirmDialog()
+        gameView.isPlaying = true
+    }
+    
+    internal func exitToMainMenu() {
+        gameView.hideExitConfirmDialog()
+        gameView.resetForNewLevel()
+        showStartMenu()
+    }
+    
     internal func startNewRun() {
         gameView.hideStartScreen()
         isShowingStartScreen = false
@@ -180,11 +200,10 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
         
         // Reset character
         character.reset()
-        gameView.clearVectorList()
+        gameView.resetTimer()
         
         // Configure path recording / replay
         levelStartTime = 0
-        lastVectorDisplayTime = 0
         if level == 1 && recordedPath.isEmpty {
             // New run: record the player's path
             isRecording = true
@@ -199,6 +218,16 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
         // Load the level scene
         let scene = SCNScene(named: "game.scnassets/level\(level).scn")!
         
+        // Fix deprecated animation keypaths (e.g. camera.aperture) embedded in the scene
+        scene.rootNode.enumerateChildNodes { (child, _) in
+            for key in child.animationKeys {
+                if let animation = child.animation(forKey: key) {
+                    animation.fixDeprecatedKeypaths()
+                    child.addAnimation(animation, forKey: key)
+                }
+            }
+        }
+        
         self.gameView.scene = scene
         self.gameView.isPlaying = true
         self.gameView.loops = true
@@ -210,6 +239,10 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
         // Add the character to the scene (remove from previous scene tree first)
         character.node.removeFromParentNode()
         scene.rootNode.addChildNode(character.node)
+        
+        // Add cloud orbit to the scene root so it doesn't rotate with the character
+        character.cloudOrbitNode.removeFromParentNode()
+        scene.rootNode.addChildNode(character.cloudOrbitNode)
         
         let startPosition = scene.rootNode.childNode(withName: "startingPoint", recursively: true)!
         character.node.transform = startPosition.transform
@@ -277,7 +310,7 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
         // Update the camera position with some inertia.
         SCNTransaction.animateWithDuration(0.5, timingFunction: CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseOut)) {
             self.cameraYHandle.rotation = SCNVector4(0, 1, 0, self.cameraYHandle.rotation.y * (self.cameraYHandle.rotation.w - SCNFloat(directionToPan.x) * F))
-            self.cameraXHandle.rotation = SCNVector4(1, 0, 0, (max(SCNFloat(-M_PI_2), min(0.13, self.cameraXHandle.rotation.w + SCNFloat(directionToPan.y) * F))))
+            self.cameraXHandle.rotation = SCNVector4(1, 0, 0, (max(SCNFloat(-Double.pi / 2), min(0.13, self.cameraXHandle.rotation.w + SCNFloat(directionToPan.y) * F))))
         }
     }
     
@@ -382,16 +415,19 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
             recordedPath.append(DirectionSnapshot(elapsed: elapsed, direction: direction))
         }
         
-        // Display replay vectors on screen (throttled to ~8 per second)
-        if isReplaying && !gameIsComplete && (time - lastVectorDisplayTime) >= 0.125 {
-            lastVectorDisplayTime = time
-            gameView.addReplayVector(direction)
+        // Update the on-screen timer
+        if !gameIsComplete {
+            gameView.updateTimer(elapsed: elapsed)
         }
         
         let groundNode = character.walkInDirection(direction, time: time, scene: scene, groundTypeFromMaterial:groundTypeFromMaterial)
         if let groundNode = groundNode {
             updateCameraWithCurrentGround(groundNode)
         }
+        
+        // Keep the cloud orbit centered above the character (it's in the scene root, not a child of the character)
+        let charPos = character.node.position
+        character.cloudOrbitNode.position = SCNVector3(charPos.x, charPos.y + character.cloudHeight, charPos.z)
         
         // Flames are static physics bodies, but they are moved by an action - So we need to tell the physics engine that the transforms did change.
         for flame in flames {
@@ -414,6 +450,22 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
             if let mixer = flameThrowerSound!.audioNode as? AVAudioMixerNode {
                 mixer.volume = 0.3 * max(0, min(1, 1 - ((distanceToClosestEnemy - 1.2) / 1.6)))
             }
+        }
+        
+        // Dynamic camera zoom: pull back when the character is close to the camera
+        if let pov = gameView.pointOfView {
+            let cameraWorldTransform = float4x4(pov.presentation.worldTransform)
+            let cameraWorldPos = float3(cameraWorldTransform[3].x, cameraWorldTransform[3].y, cameraWorldTransform[3].z)
+            let charPos = float3(character.node.presentation.position)
+            let distToCamera = simd.distance(cameraWorldPos, charPos)
+            
+            // Interpolate: close → zoomed out, far → default distance
+            let t = max(0, min(1, (distToCamera - zoomOutThreshold) / (zoomInThreshold - zoomOutThreshold)))
+            let targetZ = SCNFloat(zoomedOutCameraDistance + (defaultCameraDistance - zoomedOutCameraDistance) * SCNFloat(t))
+            
+            // Smooth lerp toward the target distance
+            let currentZ = pov.position.z
+            pov.position.z = currentZ + (targetZ - currentZ) * 0.05
         }
     }
     
@@ -519,7 +571,7 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
     
     private func setupCamera() {
         let ALTITUDE = 1.0
-        let DISTANCE = 10.0
+        let DISTANCE = Double(defaultCameraDistance)
         
         // We create 2 nodes to manipulate the camera:
         // The first node "cameraXHandle" is at the center of the world (0, ALTITUDE, 0) and will only rotate on the X axis
@@ -536,35 +588,16 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
         pov.eulerAngles = SCNVector3Zero
         pov.position = SCNVector3(0.0, 0.0, DISTANCE)
         
-        cameraXHandle.rotation = SCNVector4(1.0, 0.0, 0.0, -M_PI_4 * 0.125)
+        cameraXHandle.rotation = SCNVector4(1.0, 0.0, 0.0, -Double.pi / 4 * 0.125)
         cameraXHandle.addChildNode(pov)
         
         cameraYHandle.position = SCNVector3(0.0, ALTITUDE, 0.0)
-        cameraYHandle.rotation = SCNVector4(0.0, 1.0, 0.0, M_PI_2 + M_PI_4 * 3.0)
+        cameraYHandle.rotation = SCNVector4(0.0, 1.0, 0.0, Double.pi / 2 + Double.pi / 4 * 3.0)
         cameraYHandle.addChildNode(cameraXHandle)
         
         gameView.scene?.rootNode.addChildNode(cameraYHandle)
         
-        // Animate camera on launch and prevent the user from manipulating the camera until the end of the animation.
-        SCNTransaction.animateWithDuration(completionBlock: { self.lockCamera = false }) {
-            self.lockCamera = true
-            
-            // Create 2 additive animations that converge to 0
-            // That way at the end of the animation, the camera will be at its default position.
-            let cameraYAnimation = CABasicAnimation(keyPath: "rotation.w")
-            cameraYAnimation.fromValue = SCNFloat(M_PI) * 2.0 - self.cameraYHandle.rotation.w as NSNumber
-            cameraYAnimation.toValue = 0.0
-            cameraYAnimation.isAdditive = true
-            cameraYAnimation.beginTime = CACurrentMediaTime() + 3.0 // wait a little bit before stating
-            cameraYAnimation.fillMode = kCAFillModeBoth
-            cameraYAnimation.duration = 5.0
-            cameraYAnimation.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
-            self.cameraYHandle.addAnimation(cameraYAnimation, forKey: nil)
-            
-            let cameraXAnimation = cameraYAnimation.copy() as! CABasicAnimation
-            cameraXAnimation.fromValue = -SCNFloat(M_PI_2) + self.cameraXHandle.rotation.w as NSNumber
-            self.cameraXHandle.addAnimation(cameraXAnimation, forKey: nil)
-        }
+
     }
     
     private func setupAutomaticCameraPositions() {
@@ -713,7 +746,7 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
         // Animate the camera
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
             self.cameraYHandle.runAction(SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y:-1, z: 0, duration: 3)))
-            self.cameraXHandle.runAction(SCNAction.rotateTo(x: CGFloat(-M_PI_4), y: 0, z: 0, duration: 5.0))
+            self.cameraXHandle.runAction(SCNAction.rotateTo(x: CGFloat(-Double.pi / 4), y: 0, z: 0, duration: 5.0))
         }
         
         gameView.showEndScreen()

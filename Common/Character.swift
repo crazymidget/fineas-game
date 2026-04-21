@@ -124,20 +124,22 @@ class Character {
         
         // MARK: Create floating cloud that circles above the character
         
-        let cloudOrbitNode = SCNNode()
-        cloudOrbitNode.position = SCNVector3(0, collisionCapsuleHeight * 2.0, 0)
-        node.addChildNode(cloudOrbitNode)
+        cloudOrbitNode = SCNNode()
+        cloudHeight = SCNFloat(collisionCapsuleHeight * 6.0)
         
         let cloudMaterial = SCNMaterial()
         cloudMaterial.lightingModel = .constant
+        cloudMaterial.transparent.contents = 0.45 as NSNumber
         #if os(iOS) || os(tvOS)
-        cloudMaterial.diffuse.contents = UIColor(white: 1.0, alpha: 0.85)
+        cloudMaterial.diffuse.contents = UIColor(white: 0.7, alpha: 1.0)
         #elseif os(OSX)
-        cloudMaterial.diffuse.contents = NSColor(white: 1.0, alpha: 0.85)
+        cloudMaterial.diffuse.contents = NSColor(white: 0.7, alpha: 1.0)
         #endif
         cloudMaterial.writesToDepthBuffer = false
+        cloudMaterial.readsFromDepthBuffer = true
         
-        cloudNode = SCNNode()
+        let puffRadius = collisionCapsuleRadius * 2.0
+        let orbitRadius = collisionCapsuleRadius * 2.5
         
         func makeCloudPuff(radius: CGFloat, position: SCNVector3) -> SCNNode {
             let puff = SCNNode(geometry: SCNSphere(radius: radius))
@@ -147,65 +149,154 @@ class Character {
             return puff
         }
         
-        let puffRadius = collisionCapsuleRadius * 0.5
-        cloudNode.addChildNode(makeCloudPuff(radius: puffRadius, position: SCNVector3(0, 0, 0)))
-        cloudNode.addChildNode(makeCloudPuff(radius: puffRadius * 0.75, position: SCNVector3(puffRadius * 0.8, puffRadius * 0.15, 0)))
-        cloudNode.addChildNode(makeCloudPuff(radius: puffRadius * 0.75, position: SCNVector3(-puffRadius * 0.8, puffRadius * 0.15, 0)))
-        cloudNode.addChildNode(makeCloudPuff(radius: puffRadius * 0.6, position: SCNVector3(0, puffRadius * 0.1, puffRadius * 0.5)))
-        cloudNode.addChildNode(makeCloudPuff(radius: puffRadius * 0.6, position: SCNVector3(0, puffRadius * 0.1, -puffRadius * 0.5)))
+        func makeCloud(scale: CGFloat) -> SCNNode {
+            let cloud = SCNNode()
+            let r = puffRadius * scale
+            cloud.addChildNode(makeCloudPuff(radius: r, position: SCNVector3(0, 0, 0)))
+            cloud.addChildNode(makeCloudPuff(radius: r * 0.75, position: SCNVector3(r * 0.8, r * 0.15, 0)))
+            cloud.addChildNode(makeCloudPuff(radius: r * 0.75, position: SCNVector3(-r * 0.8, r * 0.15, 0)))
+            cloud.addChildNode(makeCloudPuff(radius: r * 0.6, position: SCNVector3(0, r * 0.1, r * 0.5)))
+            cloud.addChildNode(makeCloudPuff(radius: r * 0.6, position: SCNVector3(0, r * 0.1, -r * 0.5)))
+            return cloud
+        }
         
-        // Offset the cloud from the orbit center so it traces a circle
-        cloudNode.position = SCNVector3(collisionCapsuleRadius * 2.5, 0, 0)
+        // Main cloud (cloud 1)
+        cloudNode = makeCloud(scale: 1.0)
+        
+        // Cloud 2 — slightly smaller, offset to the side and higher
+        let cloud2 = makeCloud(scale: 0.7)
+        cloud2.position = SCNVector3(puffRadius * 1.8, puffRadius * 0.3, puffRadius * 0.6)
+        cloudNode.addChildNode(cloud2)
+        
+        // Cloud 3 — smaller still, offset opposite side
+        let cloud3 = makeCloud(scale: 0.55)
+        cloud3.position = SCNVector3(-puffRadius * 1.5, puffRadius * 0.15, -puffRadius * 0.8)
+        cloudNode.addChildNode(cloud3)
+        
+        // Position within orbit
+        cloudNode.position = SCNVector3(orbitRadius, 0, 0)
         cloudOrbitNode.addChildNode(cloudNode)
         
-        // Rotate the orbit node forever to circle around the character
+        // Slow primary orbit
         cloudOrbitNode.runAction(SCNAction.repeatForever(
-            SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 4.0)
+            SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 20.0)
         ))
         
-        // Add a gentle bobbing motion
+        // Gentle bobbing on the main cloud group
         cloudNode.runAction(SCNAction.repeatForever(
             SCNAction.sequence([
-                SCNAction.moveBy(x: 0, y: puffRadius * 0.4, z: 0, duration: 1.0),
-                SCNAction.moveBy(x: 0, y: -puffRadius * 0.4, z: 0, duration: 1.0)
+                SCNAction.moveBy(x: 0, y: puffRadius * 0.4, z: 0, duration: 2.5),
+                SCNAction.moveBy(x: 0, y: -puffRadius * 0.4, z: 0, duration: 2.5)
             ])
         ))
         
-        // Add rain falling from the cloud
-        let rainNode = SCNNode()
-        rainNode.position = SCNVector3(0, -puffRadius * 0.5, 0)
-        cloudNode.addChildNode(rainNode)
+        // Independent subtle bob on cloud 2 and 3
+        cloud2.runAction(SCNAction.repeatForever(
+            SCNAction.sequence([
+                SCNAction.moveBy(x: 0, y: puffRadius * 0.2, z: 0, duration: 3.0),
+                SCNAction.moveBy(x: 0, y: -puffRadius * 0.2, z: 0, duration: 3.0)
+            ])
+        ))
+        cloud3.runAction(SCNAction.repeatForever(
+            SCNAction.sequence([
+                SCNAction.moveBy(x: 0, y: puffRadius * 0.15, z: 0, duration: 2.0),
+                SCNAction.moveBy(x: 0, y: -puffRadius * 0.15, z: 0, duration: 2.0)
+            ])
+        ))
         
-        let rain = SCNParticleSystem()
-        rain.birthRate = 60
-        rain.particleLifeSpan = 1.5
-        rain.particleLifeSpanVariation = 0.3
-        rain.emittingDirection = SCNVector3(0, -1, 0)
-        rain.spreadingAngle = 3
-        rain.particleVelocity = 0
-        rain.particleVelocityVariation = 0
-        rain.acceleration = SCNVector3(0, CGFloat(-collisionCapsuleHeight * 1.4), 0) // Mars-like gravity
-        rain.particleSize = 0.005
-        rain.particleSizeVariation = 0.002
-        rain.stretchFactor = 0.15
+        // Secondary drift
+        let driftNode = SCNNode()
+        cloudNode.removeFromParentNode()
+        driftNode.addChildNode(cloudNode)
+        cloudOrbitNode.addChildNode(driftNode)
+        
+        driftNode.runAction(SCNAction.repeatForever(
+            SCNAction.sequence([
+                SCNAction.moveBy(x: orbitRadius * 0.6, y: 0, z: orbitRadius * 0.3, duration: 7.0),
+                SCNAction.moveBy(x: -orbitRadius * 0.4, y: 0, z: orbitRadius * 0.4, duration: 5.0),
+                SCNAction.moveBy(x: -orbitRadius * 0.5, y: 0, z: -orbitRadius * 0.5, duration: 6.0),
+                SCNAction.moveBy(x: orbitRadius * 0.3, y: 0, z: -orbitRadius * 0.2, duration: 4.0)
+            ])
+        ))
+        
+        // Add rain to each cloud
+        func addRain(to cloud: SCNNode, scale: CGFloat) {
+            let r = puffRadius * scale
+            let rainNode = SCNNode()
+            rainNode.position = SCNVector3(0, -r * 0.5, 0)
+            cloud.addChildNode(rainNode)
+            
+            let rain = SCNParticleSystem()
+            rain.birthRate = CGFloat(20) * scale * scale // scale area-proportionally
+            rain.particleLifeSpan = 3.0
+            rain.particleLifeSpanVariation = 0.5
+            rain.emittingDirection = SCNVector3(0, -1, 0)
+            rain.spreadingAngle = 5
+            rain.particleVelocity = 0
+            rain.particleVelocityVariation = 0
+            rain.acceleration = SCNVector3(0, CGFloat(-collisionCapsuleHeight * 3.0), 0)
+            rain.particleSize = 0.005
+            rain.particleSizeVariation = 0.002
+            rain.stretchFactor = 0.25
+            #if os(iOS) || os(tvOS)
+            rain.particleColor = UIColor(red: 0.5, green: 0.55, blue: 0.7, alpha: 0.5)
+            #elseif os(OSX)
+            rain.particleColor = NSColor(red: 0.5, green: 0.55, blue: 0.7, alpha: 0.5)
+            #endif
+            rain.particleColorVariation = SCNVector4(0.05, 0.05, 0.1, 0.1)
+            rain.blendMode = .alpha
+            rain.isLightingEnabled = false
+            rain.isAffectedByGravity = false
+            rain.emitterShape = SCNBox(width: r * 1.5, height: 0.001, length: r, chamferRadius: 0)
+            
+            rainNode.addParticleSystem(rain)
+        }
+        
+        addRain(to: cloudNode, scale: 1.0)
+        addRain(to: cloud2, scale: 0.7)
+        addRain(to: cloud3, scale: 0.55)
+        
+        // Add lightning flashes to the cloud
+        let lightningNode = SCNNode()
+        lightningNode.position = SCNVector3(0, -puffRadius * 0.3, 0)
+        cloudNode.addChildNode(lightningNode)
+        
+        let lightningLight = SCNLight()
+        lightningLight.type = .omni
+        lightningLight.attenuationStartDistance = 0
+        lightningLight.attenuationEndDistance = 15
         #if os(iOS) || os(tvOS)
-        rain.particleColor = UIColor(red: 0.7, green: 0.8, blue: 1.0, alpha: 0.6)
+        let lightningOff = UIColor.black
+        let lightningDim = UIColor(red: 3.0, green: 2.4, blue: 1.2, alpha: 1.0)
+        let lightningBright = UIColor(red: 8.0, green: 6.0, blue: 2.0, alpha: 1.0)
         #elseif os(OSX)
-        rain.particleColor = NSColor(red: 0.7, green: 0.8, blue: 1.0, alpha: 0.6)
+        let lightningOff = NSColor.black
+        let lightningDim = NSColor(red: 3.0, green: 2.4, blue: 1.2, alpha: 1.0)
+        let lightningBright = NSColor(red: 8.0, green: 6.0, blue: 2.0, alpha: 1.0)
         #endif
-        rain.particleColorVariation = SCNVector4(0.0, 0.0, 0.1, 0.1)
-        rain.blendMode = .alpha
-        rain.isLightingEnabled = false
-        rain.isAffectedByGravity = false
-        rain.emitterShape = SCNBox(width: puffRadius * 1.5, height: 0.001, length: puffRadius, chamferRadius: 0)
+        lightningLight.color = lightningOff
+        lightningNode.light = lightningLight
         
-        rainNode.addParticleSystem(rain)
+        // Repeating flash pattern: quick double-flash then a long pause
+        lightningNode.runAction(SCNAction.repeatForever(
+            SCNAction.sequence([
+                SCNAction.wait(duration: 3.0, withRange: 4.0),
+                SCNAction.customAction(duration: 0.05) { node, _ in node.light?.color = lightningDim },
+                SCNAction.customAction(duration: 0.05) { node, _ in node.light?.color = lightningOff },
+                SCNAction.wait(duration: 0.1),
+                SCNAction.customAction(duration: 0.05) { node, _ in node.light?.color = lightningBright },
+                SCNAction.customAction(duration: 0.08) { node, _ in node.light?.color = lightningDim },
+                SCNAction.customAction(duration: 0.05) { node, _ in node.light?.color = lightningOff },
+            ])
+        ))
     }
     
     // MARK: Retrieving nodes
     
     let node = SCNNode()
     private(set) var cloudNode: SCNNode!
+    private(set) var cloudOrbitNode: SCNNode!
+    private(set) var cloudHeight: SCNFloat = 0
     
     // MARK: Resetting the character
     

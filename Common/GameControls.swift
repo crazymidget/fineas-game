@@ -49,7 +49,7 @@ extension GameViewController {
     private static let controllerDirectionLimit = float2(1.0)
     
     internal func controllerDirection() -> float2 {
-        if isShowingStartScreen { return float2(0.0) }
+        if isShowingStartScreen || gameView.isExitConfirmVisible { return float2(0.0) }
         
         // Poll when using a game controller
         if let dpad = controllerDPad {
@@ -112,22 +112,39 @@ extension GameViewController {
     #if os(iOS)
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if isShowingStartScreen {
-            if let touch = touches.first {
-                let locationInView = touch.location(in: gameView)
-                // Convert to SpriteKit scene coordinates
-                if let skScene = gameView.overlaySKScene {
-                    let skPoint = skScene.convertPoint(fromView: locationInView)
-                    if let index = gameView.startScreenHitTest(at: skPoint) {
-                        if index == 0 {
-                            startNewRun()
-                        } else {
-                            startWithReplay(index - 1)
-                        }
+        if let touch = touches.first, let skScene = gameView.overlaySKScene {
+            let locationInView = touch.location(in: gameView)
+            let skPoint = skScene.convertPoint(fromView: locationInView)
+            
+            // Handle exit confirm dialog first
+            if gameView.isExitConfirmVisible {
+                if let result = gameView.exitConfirmHitTest(at: skPoint) {
+                    if result == "exit" {
+                        exitToMainMenu()
+                    } else {
+                        hideExitConfirm()
                     }
                 }
+                return
             }
-            return
+            
+            // Handle start screen
+            if isShowingStartScreen {
+                if let index = gameView.startScreenHitTest(at: skPoint) {
+                    if index == 0 {
+                        startNewRun()
+                    } else {
+                        startWithReplay(index - 1)
+                    }
+                }
+                return
+            }
+            
+            // Handle exit button tap
+            if gameView.exitButtonHitTest(at: skPoint) {
+                showExitConfirm()
+                return
+            }
         }
         
         for touch in touches {
@@ -149,7 +166,7 @@ extension GameViewController {
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if isShowingStartScreen { return }
+        if isShowingStartScreen || gameView.isExitConfirmVisible { return }
         
         if let touch = panningTouch {
             let displacement = (float2(touch.location(in: view)) - float2(touch.previousLocation(in: view)))
@@ -192,10 +209,25 @@ extension GameViewController {
     #if os(OSX)
     
     func mouseDown(in view: NSView, with event: NSEvent) -> Bool {
-        if isShowingStartScreen {
-            let locationInView = view.convert(event.locationInWindow, from: nil)
-            if let skScene = gameView.overlaySKScene {
-                let skPoint = skScene.convertPoint(fromView: locationInView)
+        let locationInView = view.convert(event.locationInWindow, from: nil)
+        
+        if let skScene = gameView.overlaySKScene {
+            let skPoint = skScene.convertPoint(fromView: locationInView)
+            
+            // Handle exit confirm dialog first
+            if gameView.isExitConfirmVisible {
+                if let result = gameView.exitConfirmHitTest(at: skPoint) {
+                    if result == "exit" {
+                        exitToMainMenu()
+                    } else {
+                        hideExitConfirm()
+                    }
+                }
+                return true
+            }
+            
+            // Handle start screen
+            if isShowingStartScreen {
                 if let index = gameView.startScreenHitTest(at: skPoint) {
                     if index == 0 {
                         startNewRun()
@@ -203,18 +235,24 @@ extension GameViewController {
                         startWithReplay(index - 1)
                     }
                 }
+                return true
             }
-            return true
+            
+            // Handle exit button tap
+            if gameView.exitButtonHitTest(at: skPoint) {
+                showExitConfirm()
+                return true
+            }
         }
         
         // Remember last mouse position for dragging.
-        lastMousePosition = float2(view.convert(event.locationInWindow, from: nil))
+        lastMousePosition = float2(locationInView)
         
         return true
     }
     
     func mouseDragged(in view: NSView, with event: NSEvent) -> Bool {
-        if isShowingStartScreen { return true }
+        if isShowingStartScreen || gameView.isExitConfirmVisible { return true }
         
         let mousePosition = float2(view.convert(event.locationInWindow, from: nil))
         panCamera(mousePosition - lastMousePosition)
@@ -228,7 +266,7 @@ extension GameViewController {
     }
     
     func keyDown(in view: NSView, with event: NSEvent) -> Bool {
-        if isShowingStartScreen { return true }
+        if isShowingStartScreen || gameView.isExitConfirmVisible { return true }
         
         if let direction = KeyboardDirection(rawValue: event.keyCode) {
             if !event.isARepeat {
@@ -241,7 +279,7 @@ extension GameViewController {
     }
     
     func keyUp(in view: NSView, with event: NSEvent) -> Bool {
-        if isShowingStartScreen { return true }
+        if isShowingStartScreen || gameView.isExitConfirmVisible { return true }
         
         if let direction = KeyboardDirection(rawValue: event.keyCode) {
             if !event.isARepeat {

@@ -19,7 +19,10 @@ class GameView: SCNView {
     private let collectedPearlCountLabel = SKLabelNode(fontNamed: "Chalkduster")
     private let levelLabel = SKLabelNode(fontNamed: "Chalkduster")
     private var collectedFlowerSprites = [SKSpriteNode]()
-    private let vectorListNode = SKNode()
+    private let timerLabel = SKLabelNode(fontNamed: "Chalkduster")
+    private let exitButtonLabel = SKLabelNode(fontNamed: "Chalkduster")
+    private let exitConfirmNode = SKNode()
+    var isExitConfirmVisible = false
     private let startScreenNode = SKNode()
     var isStartScreenVisible = false
     private var startScreenItemNodes = [SKNode]()  // "New Run" + replay labels for hit testing
@@ -53,7 +56,8 @@ class GameView: SCNView {
     private func layout2DOverlay() {
         overlayNode.position = CGPoint(x: 0.0, y: bounds.size.height)
         levelLabel.position = CGPoint(x: bounds.size.width * 0.5, y: -50)
-        vectorListNode.position = CGPoint(x: bounds.size.width, y: 0)
+        timerLabel.position = CGPoint(x: bounds.size.width - 10, y: -50)
+        exitButtonLabel.position = CGPoint(x: bounds.size.width - 10, y: -85)
         
         congratulationsGroupNode.position = CGPoint(x: bounds.size.width * 0.5, y: bounds.size.height * 0.5)
         
@@ -129,10 +133,21 @@ class GameView: SCNView {
         
         #endif
         
-        // The replay vector list (right side)
-        vectorListNode.position = CGPoint(x: w, y: 0)
-        vectorListNode.zPosition = 10
-        skScene.addChild(vectorListNode)
+        // Timer label (top-right)
+        timerLabel.text = "0:00"
+        timerLabel.fontSize = 24
+        timerLabel.horizontalAlignmentMode = .right
+        timerLabel.position = CGPoint(x: w - 10, y: -50)
+        overlayNode.addChild(timerLabel)
+        
+        // Exit button (top-right, below timer)
+        exitButtonLabel.text = "Exit"
+        exitButtonLabel.name = "exitButton"
+        exitButtonLabel.fontSize = 18
+        exitButtonLabel.fontColor = SKColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1.0)
+        exitButtonLabel.horizontalAlignmentMode = .right
+        exitButtonLabel.position = CGPoint(x: w - 10, y: -85)
+        overlayNode.addChild(exitButtonLabel)
         
         // Assign the SpriteKit overlay to the SceneKit view.
         overlaySKScene = skScene
@@ -145,57 +160,90 @@ class GameView: SCNView {
         }
     }
     
-    // MARK: Replay Vector List
+    // MARK: Timer
     
-    private var vectorEntryCount = 0
-    
-    func addReplayVector(_ direction: simd_float3) {
-        let label = SKLabelNode(fontNamed: "Courier")
-        label.fontSize = 11
-        label.horizontalAlignmentMode = .right
-        label.verticalAlignmentMode = .baseline
-        label.position = CGPoint(x: -10, y: 14)
-        label.alpha = 0.0
-        
-        let x = String(format: "%+.2f", direction.x)
-        let z = String(format: "%+.2f", direction.z)
-        let mag = String(format: "%.2f", simd_length(direction))
-        label.text = "(\(x), \(z))  |\(mag)|"
-        
-        // Color by magnitude: green when moving, dim when idle
-        let speed = CGFloat(simd_length(direction))
-        if speed > 0.1 {
-            label.fontColor = .green
-        } else {
-            label.fontColor = SKColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-        }
-        
-        vectorListNode.addChild(label)
-        vectorEntryCount += 1
-        
-        // Animate: fade in, scroll up, fade out, remove
-        let scrollDistance = bounds.size.height * 0.85
-        label.run(SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.9, duration: 0.1),
-            SKAction.group([
-                SKAction.moveBy(x: 0, y: scrollDistance, duration: 8.0),
-                SKAction.sequence([
-                    SKAction.wait(forDuration: 6.0),
-                    SKAction.fadeOut(withDuration: 2.0)
-                ])
-            ]),
-            SKAction.removeFromParent()
-        ]))
-        
-        // Push existing labels up
-        for child in vectorListNode.children where child !== label {
-            child.run(SKAction.moveBy(x: 0, y: 14, duration: 0.05))
-        }
+    func updateTimer(elapsed: TimeInterval) {
+        let totalSeconds = Int(elapsed)
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        timerLabel.text = String(format: "%d:%02d", minutes, seconds)
     }
     
-    func clearVectorList() {
-        vectorListNode.removeAllChildren()
-        vectorEntryCount = 0
+    func resetTimer() {
+        timerLabel.text = "0:00"
+    }
+    
+    // MARK: Exit Confirm Dialog
+    
+    func showExitConfirmDialog() {
+        guard !isExitConfirmVisible else { return }
+        isExitConfirmVisible = true
+        exitConfirmNode.removeAllChildren()
+        
+        let w = bounds.size.width
+        let h = bounds.size.height
+        
+        // Semi-transparent background
+        let bg = SKSpriteNode(color: SKColor(red: 0, green: 0, blue: 0, alpha: 0.7), size: CGSize(width: w * 2, height: h * 2))
+        bg.zPosition = 0
+        exitConfirmNode.addChild(bg)
+        
+        // Prompt text
+        let prompt = SKLabelNode(fontNamed: "Chalkduster")
+        prompt.text = "Exit Level?"
+        prompt.fontSize = 36
+        prompt.fontColor = .white
+        prompt.position = CGPoint(x: 0, y: 40)
+        prompt.zPosition = 1
+        exitConfirmNode.addChild(prompt)
+        
+        // Exit button (red)
+        let exitLabel = SKLabelNode(fontNamed: "Chalkduster")
+        exitLabel.text = "Exit"
+        exitLabel.name = "exitConfirm_exit"
+        exitLabel.fontSize = 28
+        exitLabel.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)
+        exitLabel.position = CGPoint(x: -80, y: -30)
+        exitLabel.zPosition = 1
+        exitConfirmNode.addChild(exitLabel)
+        
+        // Cancel button (green)
+        let cancelLabel = SKLabelNode(fontNamed: "Chalkduster")
+        cancelLabel.text = "Cancel"
+        cancelLabel.name = "exitConfirm_cancel"
+        cancelLabel.fontSize = 28
+        cancelLabel.fontColor = SKColor(red: 0.2, green: 1.0, blue: 0.2, alpha: 1.0)
+        cancelLabel.position = CGPoint(x: 80, y: -30)
+        cancelLabel.zPosition = 1
+        exitConfirmNode.addChild(cancelLabel)
+        
+        exitConfirmNode.position = CGPoint(x: w * 0.5, y: h * 0.5)
+        exitConfirmNode.zPosition = 200
+        overlaySKScene?.addChild(exitConfirmNode)
+    }
+    
+    func hideExitConfirmDialog() {
+        exitConfirmNode.removeAllChildren()
+        exitConfirmNode.removeFromParent()
+        isExitConfirmVisible = false
+    }
+    
+    /// Returns "exit" or "cancel" if the tap hit a dialog button, nil otherwise
+    func exitConfirmHitTest(at point: CGPoint) -> String? {
+        guard isExitConfirmVisible, let skScene = overlaySKScene else { return nil }
+        let nodesAtPoint = skScene.nodes(at: point)
+        for node in nodesAtPoint {
+            if node.name == "exitConfirm_exit" { return "exit" }
+            if node.name == "exitConfirm_cancel" { return "cancel" }
+        }
+        return nil
+    }
+    
+    /// Returns true if the tap hit the exit button in the HUD
+    func exitButtonHitTest(at point: CGPoint) -> Bool {
+        guard !isExitConfirmVisible, let skScene = overlaySKScene else { return false }
+        let nodesAtPoint = skScene.nodes(at: point)
+        return nodesAtPoint.contains(where: { $0.name == "exitButton" })
     }
     
     var collectedPearlsCount = 0 {
