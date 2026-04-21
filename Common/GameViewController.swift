@@ -659,7 +659,15 @@ class GameViewController: ViewController, SCNSceneRendererDelegate, SCNPhysicsCo
         // Get an arbitrary node to attach the sounds to.
         let node = self.gameView.scene!.rootNode
         
-        node.addAudioPlayer(SCNAudioPlayer(source: SCNAudioSource(name: "music.m4a", volume: 0.25, positional: false, loops: true, shouldStream: true)))
+        // Procedural techno music
+        let technoURL = TechnoMusicGenerator.generate()
+        let technoSource = SCNAudioSource(url: technoURL)!
+        technoSource.volume = 0.25
+        technoSource.isPositional = false
+        technoSource.loops = true
+        technoSource.shouldStream = true
+        technoSource.load()
+        node.addAudioPlayer(SCNAudioPlayer(source: technoSource))
         node.addAudioPlayer(SCNAudioPlayer(source: SCNAudioSource(name: "wind.m4a", volume: 0.3, positional: false, loops: true, shouldStream: true)))
         flameThrowerSound = SCNAudioPlayer(source: SCNAudioSource(name: "flamethrower.mp3", volume: 0, positional: false, loops: true))
         node.addAudioPlayer(flameThrowerSound)

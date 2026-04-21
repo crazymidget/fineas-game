@@ -68,6 +68,12 @@
 		9CFCF1951B69005D00686987 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CB2D9061B67DA0200EC4C98 /* GameView.swift */; };
 		9CFCF1961B69005D00686987 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CB2D9071B67DA0200EC4C98 /* GameViewController.swift */; };
 		9CFCF1971B69005D00686987 /* SceneKitExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CB2D9081B67DA0200EC4C98 /* SceneKitExtensions.swift */; };
+		D89BD1B42F97487900725037 /* Intergalactic.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D89BD1B32F97487900725037 /* Intergalactic.mp3 */; };
+		D89BD1B52F97487900725037 /* Intergalactic.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D89BD1B32F97487900725037 /* Intergalactic.mp3 */; };
+		D89BD1B62F97487900725037 /* Intergalactic.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D89BD1B32F97487900725037 /* Intergalactic.mp3 */; };
+		D89BD1B82F9748B300725037 /* TechnoMusicGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D89BD1B72F9748B300725037 /* TechnoMusicGenerator.swift */; };
+		D89BD1B92F9748B300725037 /* TechnoMusicGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D89BD1B72F9748B300725037 /* TechnoMusicGenerator.swift */; };
+		D89BD1BA2F9748B300725037 /* TechnoMusicGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D89BD1B72F9748B300725037 /* TechnoMusicGenerator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -105,6 +111,8 @@
 		9CFCF1781B68E61200686987 /* ItemsPearl.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ItemsPearl.png; sourceTree = "<group>"; };
 		9CFCF1791B68E61200686987 /* MaxIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MaxIcon.png; sourceTree = "<group>"; };
 		9CFEBECF1B1F80F7002C687D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		D89BD1B32F97487900725037 /* Intergalactic.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = Intergalactic.mp3; sourceTree = "<group>"; };
+		D89BD1B72F9748B300725037 /* TechnoMusicGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TechnoMusicGenerator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -181,6 +189,7 @@
 				9CB2D9071B67DA0200EC4C98 /* GameViewController.swift */,
 				9C8B331B1BAC4E2C000BC0FB /* GameControls.swift */,
 				9CB2D9081B67DA0200EC4C98 /* SceneKitExtensions.swift */,
+				D89BD1B72F9748B300725037 /* TechnoMusicGenerator.swift */,
 			);
 			name = Common;
 			sourceTree = "<group>";
@@ -210,6 +219,7 @@
 		9CFCF16C1B68E61200686987 /* Game assets */ = {
 			isa = PBXGroup;
 			children = (
+				D89BD1B32F97487900725037 /* Intergalactic.mp3 */,
 				9CFCF16D1B68E61200686987 /* game.scnassets */,
 				9CFCF1721B68E61200686987 /* Overlays */,
 				9C8180A11BDA674800FE8C68 /* Particle systems */,
@@ -341,6 +351,7 @@
 				9C1515F61BAABB8800A3419A /* game.scnassets in Resources */,
 				9C8180B11BDA674800FE8C68 /* glow01.png in Resources */,
 				9C8180A81BDA674800FE8C68 /* collect.scnp in Resources */,
+				D89BD1B42F97487900725037 /* Intergalactic.mp3 in Resources */,
 				9C1515F71BAABB8C00A3419A /* congratulations.png in Resources */,
 				9C1515FD1BAABB8C00A3419A /* MaxIcon.png in Resources */,
 				9C8180AB1BDA674800FE8C68 /* confetti.png in Resources */,
@@ -360,6 +371,7 @@
 				9C1315451BA8668F001E29CC /* game.scnassets in Resources */,
 				9C8180B01BDA674800FE8C68 /* glow01.png in Resources */,
 				9C8180A71BDA674800FE8C68 /* collect.scnp in Resources */,
+				D89BD1B52F97487900725037 /* Intergalactic.mp3 in Resources */,
 				9C1315461BA86694001E29CC /* congratulations.png in Resources */,
 				9C13154C1BA86694001E29CC /* MaxIcon.png in Resources */,
 				9C8180AA1BDA674800FE8C68 /* confetti.png in Resources */,
@@ -377,6 +389,7 @@
 				9CFCF1881B68E61200686987 /* dpad.png in Resources */,
 				9CB2D9251B67DB2E00EC4C98 /* Images.xcassets in Resources */,
 				9CFCF18A1B68E61200686987 /* FlowerEmpty.png in Resources */,
+				D89BD1B62F97487900725037 /* Intergalactic.mp3 in Resources */,
 				9CFCF1841B68E61200686987 /* congratulations.png in Resources */,
 				9C8180AF1BDA674800FE8C68 /* glow01.png in Resources */,
 				9C8180A61BDA674800FE8C68 /* collect.scnp in Resources */,
@@ -392,6 +405,7 @@
 			isa = PBXSourcesBuildPhase;
 			files = (
 				9C1515F31BAABB7700A3419A /* AppDelegate.swift in Sources */,
+				D89BD1BA2F9748B300725037 /* TechnoMusicGenerator.swift in Sources */,
 				9C5EC6331BAAC15400BF4D1F /* Character.swift in Sources */,
 				9C5EC6361BAAC15400BF4D1F /* SceneKitExtensions.swift in Sources */,
 				9C5EC6351BAAC15400BF4D1F /* GameViewController.swift in Sources */,
@@ -403,6 +417,7 @@
 			isa = PBXSourcesBuildPhase;
 			files = (
 				9CB408881BA8637700577F11 /* AppDelegate.swift in Sources */,
+				D89BD1B82F9748B300725037 /* TechnoMusicGenerator.swift in Sources */,
 				9C13154D1BA8669C001E29CC /* Character.swift in Sources */,
 				9C1315501BA8669C001E29CC /* SceneKitExtensions.swift in Sources */,
 				9C13154F1BA8669C001E29CC /* GameViewController.swift in Sources */,
@@ -414,6 +429,7 @@
 			isa = PBXSourcesBuildPhase;
 			files = (
 				9CFCF1951B69005D00686987 /* GameView.swift in Sources */,
+				D89BD1B92F9748B300725037 /* TechnoMusicGenerator.swift in Sources */,
 				9CFCF1961B69005D00686987 /* GameViewController.swift in Sources */,
 				9CFCF1941B69005D00686987 /* Character.swift in Sources */,
 				9CB2D91E1B67DB2E00EC4C98 /* AppDelegate.swift in Sources */,

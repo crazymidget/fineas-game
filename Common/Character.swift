@@ -264,15 +264,15 @@ class Character {
         let lightningLight = SCNLight()
         lightningLight.type = .omni
         lightningLight.attenuationStartDistance = 0
-        lightningLight.attenuationEndDistance = 15
+        lightningLight.attenuationEndDistance = 4
         #if os(iOS) || os(tvOS)
         let lightningOff = UIColor.black
-        let lightningDim = UIColor(red: 3.0, green: 2.4, blue: 1.2, alpha: 1.0)
-        let lightningBright = UIColor(red: 8.0, green: 6.0, blue: 2.0, alpha: 1.0)
+        let lightningDim = UIColor(red: 0.6, green: 0.5, blue: 0.3, alpha: 1.0)
+        let lightningBright = UIColor(red: 1.5, green: 1.2, blue: 0.6, alpha: 1.0)
         #elseif os(OSX)
         let lightningOff = NSColor.black
-        let lightningDim = NSColor(red: 3.0, green: 2.4, blue: 1.2, alpha: 1.0)
-        let lightningBright = NSColor(red: 8.0, green: 6.0, blue: 2.0, alpha: 1.0)
+        let lightningDim = NSColor(red: 0.6, green: 0.5, blue: 0.3, alpha: 1.0)
+        let lightningBright = NSColor(red: 1.5, green: 1.2, blue: 0.6, alpha: 1.0)
         #endif
         lightningLight.color = lightningOff
         lightningNode.light = lightningLight
